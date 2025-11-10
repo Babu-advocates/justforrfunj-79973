@@ -49,6 +49,47 @@ export default function BankEmployeeDashboard() {
 
   useEffect(() => {
     fetchApplicationStats();
+
+    // Set up real-time subscription for applications
+    const applicationsChannel = supabase
+      .channel('applications-changes')
+      .on(
+        'postgres_changes',
+        {
+          event: '*', // Listen to all events (INSERT, UPDATE, DELETE)
+          schema: 'public',
+          table: 'applications',
+          filter: `bank_name=eq.${bankName}`
+        },
+        (payload) => {
+          console.log('Applications change detected:', payload);
+          fetchApplicationStats(); // Refetch stats when any change occurs
+        }
+      )
+      .subscribe();
+
+    // Set up real-time subscription for queries
+    const queriesChannel = supabase
+      .channel('queries-changes')
+      .on(
+        'postgres_changes',
+        {
+          event: '*', // Listen to all events
+          schema: 'public',
+          table: 'queries'
+        },
+        (payload) => {
+          console.log('Queries change detected:', payload);
+          fetchApplicationStats(); // Refetch stats when any change occurs
+        }
+      )
+      .subscribe();
+
+    // Cleanup subscriptions on unmount
+    return () => {
+      supabase.removeChannel(applicationsChannel);
+      supabase.removeChannel(queriesChannel);
+    };
   }, [bankName]);
 
   // Helper function to calculate time ago
