@@ -183,12 +183,12 @@ Animation keyframes for smooth transitions and effects
 
 /* Custom scrollbar for horizontal tables */
 .overflow-x-auto, main.overflow-x-auto {
-  scrollbar-width: thin;
+  scrollbar-width: auto;
   scrollbar-color: hsl(var(--primary)) hsl(var(--muted));
 }
 
 .overflow-x-auto::-webkit-scrollbar, main.overflow-x-auto::-webkit-scrollbar {
-  height: 14px;
+  height: 20px;
 }
 
 .overflow-x-auto::-webkit-scrollbar-track, main.overflow-x-auto::-webkit-scrollbar-track {
