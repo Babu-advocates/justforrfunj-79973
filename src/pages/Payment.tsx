@@ -1,13 +1,15 @@
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { ArrowLeft, Mail, CreditCard } from "lucide-react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, Link } from "react-router-dom";
 import { useEffect, useState } from "react";
 import newUpiQr from "@/assets/new-upi-qr.png";
+import { Scale, Gavel, Menu } from "lucide-react";
 
 const Payment = () => {
   const navigate = useNavigate();
   const [isMobile, setIsMobile] = useState(false);
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const upiId = "pandeesbabu2211-1@okhdfcbank";
 
   useEffect(() => {
@@ -39,17 +41,113 @@ const Payment = () => {
       <header className="bg-legal-deep-blue shadow-elegant sticky top-0 z-50">
         <div className="container mx-auto px-6 py-4">
           <div className="flex items-center justify-between">
-            <Button
-              variant="ghost"
-              onClick={() => navigate("/")}
-              className="text-primary-foreground hover:text-justice-gold hover:bg-primary-foreground/10 transition-colors relative z-10"
-            >
-              <ArrowLeft className="h-5 w-5 mr-2" />
-              Back to Home
+            {/* Logo and Brand */}
+            <div className="flex items-center gap-3">
+              <div className="relative">
+                <Scale className="h-9 w-9 text-justice-gold animate-pulse-slow" />
+                <div className="absolute -top-1 -right-1 w-3 h-3 bg-justice-gold rounded-full animate-pulse"></div>
+              </div>
+              <div>
+                <h1 className="text-2xl font-bold text-primary-foreground">Babu Advocate</h1>
+                <p className="text-xs text-justice-gold font-medium">Professional Legal Services</p>
+              </div>
+            </div>
+
+            {/* Desktop Navigation */}
+            <nav className="hidden md:flex items-center space-x-1">
+              <Button variant="nav" size="sm" className="px-4" onClick={() => navigate("/")}>
+                Home
+              </Button>
+              <Button variant="nav" size="sm" className="px-4" onClick={() => {
+                navigate("/");
+                setTimeout(() => {
+                  document.getElementById('about-us')?.scrollIntoView({ behavior: 'smooth' });
+                }, 100);
+              }}>
+                About Us
+              </Button>
+              <Button variant="nav" size="sm" className="px-4" onClick={() => {
+                navigate("/");
+                setTimeout(() => {
+                  document.getElementById('contact')?.scrollIntoView({ behavior: 'smooth' });
+                }, 100);
+              }}>
+                Contact Us
+              </Button>
+              <Link to="/empanelled-details">
+                <Button variant="nav" size="sm" className="px-4">
+                  Empanelled Details
+                </Button>
+              </Link>
+              <Link to="/gallery">
+                <Button variant="nav" size="sm" className="px-4">
+                  Gallery
+                </Button>
+              </Link>
+              <Link to="/payment">
+                <Button variant="nav" size="sm" className="px-4">
+                  Payment
+                </Button>
+              </Link>
+              <div className="ml-4 pl-4 border-l border-primary-foreground/20">
+                <span className="text-sm text-justice-gold font-semibold">
+                  🏛️ Secure Case Management Platform
+                </span>
+              </div>
+            </nav>
+
+            {/* Mobile Menu Button */}
+            <Button variant="nav" size="sm" className="md:hidden" onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}>
+              <Menu className="h-5 w-5" />
             </Button>
-            <h1 className="text-2xl font-bold text-primary-foreground">Payment</h1>
-            <div className="w-24" /> {/* Spacer for centering */}
           </div>
+
+          {/* Mobile Menu */}
+          {isMobileMenuOpen && (
+            <div className="md:hidden mt-4 pb-4 border-t border-primary-foreground/20 animate-fade-in">
+              <nav className="flex flex-col space-y-2 mt-4">
+                <Button variant="nav" size="sm" className="justify-start" onClick={() => {
+                  navigate("/");
+                  setIsMobileMenuOpen(false);
+                }}>
+                  Home
+                </Button>
+                <Button variant="nav" size="sm" className="justify-start" onClick={() => {
+                  navigate("/");
+                  setTimeout(() => {
+                    document.getElementById('about-us')?.scrollIntoView({ behavior: 'smooth' });
+                  }, 100);
+                  setIsMobileMenuOpen(false);
+                }}>
+                  About Us
+                </Button>
+                <Button variant="nav" size="sm" className="justify-start" onClick={() => {
+                  navigate("/");
+                  setTimeout(() => {
+                    document.getElementById('contact')?.scrollIntoView({ behavior: 'smooth' });
+                  }, 100);
+                  setIsMobileMenuOpen(false);
+                }}>
+                  Contact Us
+                </Button>
+                <Link to="/empanelled-details">
+                  <Button variant="nav" size="sm" className="justify-start w-full" onClick={() => setIsMobileMenuOpen(false)}>
+                    Empanelled Details
+                  </Button>
+                </Link>
+                <Link to="/gallery">
+                  <Button variant="nav" size="sm" className="justify-start w-full" onClick={() => setIsMobileMenuOpen(false)}>
+                    Gallery
+                  </Button>
+                </Link>
+                <Link to="/payment">
+                  <Button variant="nav" size="sm" className="justify-start w-full" onClick={() => setIsMobileMenuOpen(false)}>
+                    Payment
+                  </Button>
+                </Link>
+              </nav>
+            </div>
+          )}
         </div>
       </header>
 

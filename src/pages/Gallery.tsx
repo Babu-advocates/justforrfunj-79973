@@ -1,7 +1,7 @@
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
-import { Scale, FileText, ArrowLeft, X } from "lucide-react";
-import { Link } from "react-router-dom";
+import { Scale, FileText, X, Menu } from "lucide-react";
+import { Link, useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useEffect, useState } from "react";
 
@@ -12,9 +12,11 @@ interface GalleryImage {
 }
 
 const Gallery = () => {
+  const navigate = useNavigate();
   const [galleryImages, setGalleryImages] = useState<GalleryImage[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
   useEffect(() => {
     const fetchGalleryImages = async () => {
@@ -62,6 +64,7 @@ const Gallery = () => {
       <header className="bg-legal-deep-blue shadow-elegant sticky top-0 z-50">
         <div className="container mx-auto px-6 py-4">
           <div className="flex items-center justify-between">
+            {/* Logo and Brand */}
             <div className="flex items-center gap-3">
               <div className="relative">
                 <Scale className="h-9 w-9 text-justice-gold animate-pulse-slow" />
@@ -72,13 +75,102 @@ const Gallery = () => {
                 <p className="text-xs text-justice-gold font-medium">Professional Legal Services</p>
               </div>
             </div>
-            <Link to="/">
-              <Button variant="nav" size="sm" className="gap-2">
-                <ArrowLeft className="h-4 w-4" />
-                Back to Home
+
+            {/* Desktop Navigation */}
+            <nav className="hidden md:flex items-center space-x-1">
+              <Button variant="nav" size="sm" className="px-4" onClick={() => navigate("/")}>
+                Home
               </Button>
-            </Link>
+              <Button variant="nav" size="sm" className="px-4" onClick={() => {
+                navigate("/");
+                setTimeout(() => {
+                  document.getElementById('about-us')?.scrollIntoView({ behavior: 'smooth' });
+                }, 100);
+              }}>
+                About Us
+              </Button>
+              <Button variant="nav" size="sm" className="px-4" onClick={() => {
+                navigate("/");
+                setTimeout(() => {
+                  document.getElementById('contact')?.scrollIntoView({ behavior: 'smooth' });
+                }, 100);
+              }}>
+                Contact Us
+              </Button>
+              <Link to="/empanelled-details">
+                <Button variant="nav" size="sm" className="px-4">
+                  Empanelled Details
+                </Button>
+              </Link>
+              <Link to="/gallery">
+                <Button variant="nav" size="sm" className="px-4">
+                  Gallery
+                </Button>
+              </Link>
+              <Link to="/payment">
+                <Button variant="nav" size="sm" className="px-4">
+                  Payment
+                </Button>
+              </Link>
+              <div className="ml-4 pl-4 border-l border-primary-foreground/20">
+                <span className="text-sm text-justice-gold font-semibold">
+                  🏛️ Secure Case Management Platform
+                </span>
+              </div>
+            </nav>
+
+            {/* Mobile Menu Button */}
+            <Button variant="nav" size="sm" className="md:hidden" onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}>
+              <Menu className="h-5 w-5" />
+            </Button>
           </div>
+
+          {/* Mobile Menu */}
+          {isMobileMenuOpen && (
+            <div className="md:hidden mt-4 pb-4 border-t border-primary-foreground/20 animate-fade-in">
+              <nav className="flex flex-col space-y-2 mt-4">
+                <Button variant="nav" size="sm" className="justify-start" onClick={() => {
+                  navigate("/");
+                  setIsMobileMenuOpen(false);
+                }}>
+                  Home
+                </Button>
+                <Button variant="nav" size="sm" className="justify-start" onClick={() => {
+                  navigate("/");
+                  setTimeout(() => {
+                    document.getElementById('about-us')?.scrollIntoView({ behavior: 'smooth' });
+                  }, 100);
+                  setIsMobileMenuOpen(false);
+                }}>
+                  About Us
+                </Button>
+                <Button variant="nav" size="sm" className="justify-start" onClick={() => {
+                  navigate("/");
+                  setTimeout(() => {
+                    document.getElementById('contact')?.scrollIntoView({ behavior: 'smooth' });
+                  }, 100);
+                  setIsMobileMenuOpen(false);
+                }}>
+                  Contact Us
+                </Button>
+                <Link to="/empanelled-details">
+                  <Button variant="nav" size="sm" className="justify-start w-full" onClick={() => setIsMobileMenuOpen(false)}>
+                    Empanelled Details
+                  </Button>
+                </Link>
+                <Link to="/gallery">
+                  <Button variant="nav" size="sm" className="justify-start w-full" onClick={() => setIsMobileMenuOpen(false)}>
+                    Gallery
+                  </Button>
+                </Link>
+                <Link to="/payment">
+                  <Button variant="nav" size="sm" className="justify-start w-full" onClick={() => setIsMobileMenuOpen(false)}>
+                    Payment
+                  </Button>
+                </Link>
+              </nav>
+            </div>
+          )}
         </div>
       </header>
 
