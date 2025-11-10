@@ -35,7 +35,14 @@ export default function BankEmployeeDashboard() {
     documentsSubmitted: { today: 0, thisMonth: 0, total: 0 },
     pendingDocuments: 0,
     queriesReceived: 0,
-    completedDocuments: 156
+    completedDocuments: 0
+  });
+  const [quickStats, setQuickStats] = useState({
+    activeCases: 0,
+    completionRate: 0,
+    avgResponseTime: "0 hrs",
+    recoveryAmount: "₹0",
+    openQueries: 0
   });
   const [loading, setLoading] = useState(true);
   const [queryNotifications, setQueryNotifications] = useState([]);
@@ -124,10 +131,10 @@ export default function BankEmployeeDashboard() {
       startOfMonth.setHours(0, 0, 0, 0);
       console.log('Start of month:', startOfMonth);
       
-      // Fetch applications for this bank
+      // Fetch applications for this bank with more details
       const { data: applications, error } = await supabase
         .from('applications')
-        .select('submitted_date, submission_date, status, application_id')
+        .select('submitted_date, submission_date, status, application_id, loan_amount, outstanding_amount, created_at')
         .eq('bank_name', bankName);
 
       console.log('Applications data:', applications);
@@ -168,30 +175,78 @@ export default function BankEmployeeDashboard() {
         )
       ).length || 0;
 
+      // Completed documents
+      const completedDocs = applications?.filter(app => 
+        app.status && (
+          app.status.toLowerCase().includes('completed') || 
+          app.status.toLowerCase().includes('closed') ||
+          app.status.toLowerCase().includes('signed')
+        )
+      ).length || 0;
+
+      // Active cases (not completed or closed)
+      const activeCases = applications?.filter(app => 
+        app.status && !(
+          app.status.toLowerCase().includes('completed') || 
+          app.status.toLowerCase().includes('closed')
+        )
+      ).length || 0;
+
+      // Calculate completion rate
+      const completionRate = totalSubmissions > 0 
+        ? Math.round((completedDocs / totalSubmissions) * 100) 
+        : 0;
+
+      // Calculate total recovery amount
+      const totalRecoveryAmount = applications?.reduce((sum, app) => {
+        return sum + (Number(app.outstanding_amount) || 0);
+      }, 0) || 0;
+
+      const recoveryAmountFormatted = totalRecoveryAmount >= 100000 
+        ? `₹${(totalRecoveryAmount / 100000).toFixed(2)}L`
+        : `₹${(totalRecoveryAmount / 1000).toFixed(2)}K`;
+
       console.log('Today submissions:', todaySubmissions);
       console.log('This month submissions:', thisMonthSubmissions);
       console.log('Total submissions:', totalSubmissions);
       console.log('Pending documents:', pendingDocs);
+      console.log('Completed documents:', completedDocs);
 
       // Fetch queries for applications from this bank
       const applicationIds = applications?.map(app => app.application_id) || [];
       
       let queriesCount = 0;
+      let openQueriesCount = 0;
       let queryDetails = [];
+      let totalResponseTime = 0;
+      let responsesCount = 0;
+
       if (applicationIds.length > 0) {
         const { data: queries, error: queriesError } = await supabase
           .from('queries')
           .select('id, application_id, message, sender_name, created_at, is_read')
           .in('application_id', applicationIds)
-          .order('created_at', { ascending: false })
-          .limit(10);
+          .order('created_at', { ascending: false });
 
         console.log('Queries data:', queries);
         console.log('Queries error:', queriesError);
 
         if (queries) {
           queriesCount = queries.length;
-          queryDetails = queries.map(query => {
+          openQueriesCount = queries.filter(q => !q.is_read).length;
+          
+          // Calculate average response time
+          queries.forEach(query => {
+            const queryDate = new Date(query.created_at);
+            const now = new Date();
+            const diffInHours = (now.getTime() - queryDate.getTime()) / (1000 * 60 * 60);
+            if (query.is_read) {
+              totalResponseTime += diffInHours;
+              responsesCount++;
+            }
+          });
+
+          queryDetails = queries.slice(0, 10).map(query => {
             const timeAgo = getTimeAgo(query.created_at);
             return {
               type: query.is_read ? "info" : "urgent",
@@ -203,6 +258,10 @@ export default function BankEmployeeDashboard() {
         }
       }
 
+      const avgResponseTime = responsesCount > 0 
+        ? `${(totalResponseTime / responsesCount).toFixed(1)} hrs`
+        : "0 hrs";
+
       console.log('Queries received:', queriesCount);
 
       setKpiData(prev => ({
@@ -213,8 +272,17 @@ export default function BankEmployeeDashboard() {
           total: totalSubmissions,
         },
         pendingDocuments: pendingDocs,
-        queriesReceived: queriesCount
+        queriesReceived: queriesCount,
+        completedDocuments: completedDocs
       }));
+
+      setQuickStats({
+        activeCases,
+        completionRate,
+        avgResponseTime,
+        recoveryAmount: recoveryAmountFormatted,
+        openQueries: openQueriesCount
+      });
 
       setQueryNotifications(queryDetails);
     } catch (error) {
@@ -402,7 +470,9 @@ export default function BankEmployeeDashboard() {
                     <CheckCircle className="h-4 w-4 text-bank-success" />
                   </CardHeader>
                   <CardContent>
-                    <div className="text-2xl font-bold text-foreground">{kpiData.completedDocuments}</div>
+                    <div className="text-2xl font-bold text-foreground">
+                      {loading ? "..." : kpiData.completedDocuments}
+                    </div>
                     <p className="text-xs text-muted-foreground mt-1">Digitally signed & closed</p>
                   </CardContent>
                 </Card>
@@ -464,7 +534,9 @@ export default function BankEmployeeDashboard() {
                             <FileText className="h-4 w-4 text-bank-navy" />
                             <span className="text-sm text-muted-foreground">Active Cases</span>
                           </div>
-                          <span className="text-xl font-bold text-foreground">24</span>
+                          <span className="text-xl font-bold text-foreground">
+                            {loading ? "..." : quickStats.activeCases}
+                          </span>
                         </div>
                         
                         <div className="flex items-center justify-between">
@@ -472,7 +544,9 @@ export default function BankEmployeeDashboard() {
                             <CheckCircle className="h-4 w-4 text-bank-success" />
                             <span className="text-sm text-muted-foreground">Completion Rate</span>
                           </div>
-                          <span className="text-xl font-bold text-bank-success">94%</span>
+                          <span className="text-xl font-bold text-bank-success">
+                            {loading ? "..." : `${quickStats.completionRate}%`}
+                          </span>
                         </div>
                         
                         <div className="flex items-center justify-between">
@@ -480,7 +554,9 @@ export default function BankEmployeeDashboard() {
                             <Clock className="h-4 w-4 text-bank-warning" />
                             <span className="text-sm text-muted-foreground">Avg. Response Time</span>
                           </div>
-                          <span className="text-xl font-bold text-foreground">2.3 hrs</span>
+                          <span className="text-xl font-bold text-foreground">
+                            {loading ? "..." : quickStats.avgResponseTime}
+                          </span>
                         </div>
 
                         <div className="flex items-center justify-between">
@@ -488,7 +564,9 @@ export default function BankEmployeeDashboard() {
                             <DollarSign className="h-4 w-4 text-bank-navy" />
                             <span className="text-sm text-muted-foreground">Recovery Amount</span>
                           </div>
-                          <span className="text-xl font-bold text-foreground">₹8.25L</span>
+                          <span className="text-xl font-bold text-foreground">
+                            {loading ? "..." : quickStats.recoveryAmount}
+                          </span>
                         </div>
 
                         <div className="flex items-center justify-between">
@@ -496,7 +574,9 @@ export default function BankEmployeeDashboard() {
                             <HelpCircle className="h-4 w-4 text-destructive" />
                             <span className="text-sm text-muted-foreground">Open Queries</span>
                           </div>
-                          <span className="text-xl font-bold text-destructive">3</span>
+                          <span className="text-xl font-bold text-destructive">
+                            {loading ? "..." : quickStats.openQueries}
+                          </span>
                         </div>
                       </div>
                     </CardContent>
